@@ -137,20 +137,23 @@ export default function UserManagementPage() {
               </button>
 
               {showDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-10 overflow-hidden ">
-                  {departments.map((dept) => (
-                    <button
-                      key={dept}
-                      onClick={() => {
-                        setSelectedDepartment(dept)
-                        setShowDropdown(false)
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-blue-50 cursor-pointer   
-                        ${selectedDepartment === dept ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'}`}
-                    >
-                      {dept}
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                    {departments.map((dept) => (
+                      <button
+                        key={dept}
+                        onClick={() => {
+                          setSelectedDepartment(dept);
+                          setShowDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-blue-50 cursor-pointer    
+                          ${selectedDepartment === dept ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'}`}
+                      >
+                        {dept}
+                      </button>
+                    ))}
+                  </div>
+                  
                 </div>
               )}
             </div>

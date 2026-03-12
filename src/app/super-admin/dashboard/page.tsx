@@ -1,9 +1,8 @@
 'use client'
 
-
 import { useState, useEffect, useRef } from 'react'
-import { Search, Bell, FileText, CheckCircle, XCircle, Clock, ArrowRight, MoreVertical } from 'lucide-react'
-
+import { Search, Bell, FileText, CheckCircle, XCircle, Clock, ArrowRight, MoreVertical, Send, FileCheck, ClipboardList } from 'lucide-react'
+import Link from 'next/link'
 
 const initialNotifications = [
   { id: 1, msg: 'Document A has been Approved by A.O', time: '2 min ago', type: 'approve' },
@@ -20,12 +19,13 @@ const mockDocuments = [
   { id: 5, name: 'Scholarship Grant Certificate', type: 'Financial Document', department: 'Associate Dean',    date: '03/25/2025', status: 'Received' },
 ]
 
+// Added unique 'Icon' properties to each stat
 const stats = [
-  { label: 'Released',         value: 20, bg: 'bg-teal-50',   iconColor: 'text-teal-400',   border: 'border-teal-100'   },
-  { label: 'Approved',         value: 20, bg: 'bg-green-50',  iconColor: 'text-green-500',  border: 'border-green-100'  },
-  { label: 'Denied',           value: 20, bg: 'bg-red-50',    iconColor: 'text-red-400',    border: 'border-red-100'    },
-  { label: 'For Approval',     value: 20, bg: 'bg-yellow-50', iconColor: 'text-yellow-500', border: 'border-yellow-100' },
-  { label: 'Pending Approval', value: 20, bg: 'bg-orange-50', iconColor: 'text-orange-400', border: 'border-orange-100' },
+  { label: 'Released',         value: 20, bg: 'bg-teal-50',   iconColor: 'text-teal-400',   border: 'border-teal-100',   Icon: Send },
+  { label: 'Approved',         value: 20, bg: 'bg-green-50',  iconColor: 'text-green-500',  border: 'border-green-100',  Icon: FileCheck },
+  { label: 'Denied',           value: 20, bg: 'bg-red-50',    iconColor: 'text-red-400',    border: 'border-red-100',    Icon: XCircle },
+  { label: 'For Approval',     value: 20, bg: 'bg-yellow-50', iconColor: 'text-yellow-500', border: 'border-yellow-100', Icon: ClipboardList },
+  { label: 'Pending Approval', value: 20, bg: 'bg-orange-50', iconColor: 'text-orange-400', border: 'border-orange-100', Icon: Clock },
 ]
 
 export default function SuperAdminDashboardPage() {
@@ -40,7 +40,7 @@ export default function SuperAdminDashboardPage() {
     d.department.toLowerCase().includes(search.toLowerCase())
   )
 
-useEffect(() => {
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false)
@@ -110,6 +110,7 @@ useEffect(() => {
           </div>
         </div>
       </header>
+
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-8 py-6 bg-gray-50">
 
@@ -121,7 +122,8 @@ useEffect(() => {
               className={`flex-1 bg-white rounded-2xl border ${s.border} shadow-sm px-4 py-4 flex items-center gap-3`}
             >
               <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center shrink-0`}>
-                <FileText size={18} className={s.iconColor} />
+                {/* Dynamically render the unique icon here */}
+                <s.Icon size={18} className={s.iconColor} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-800 leading-none">{s.value}</p>
@@ -137,7 +139,8 @@ useEffect(() => {
             <h2 className="font-bold text-gray-800 flex items-center gap-2">
               Recently Received Documents
             </h2>
-            <button className="text-xs text-blue-600 font-semibold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">View All</button>
+            <Link href="/super-admin/document-progress" 
+            className="text-xs text-blue-600 font-semibold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition"> View All </Link>
           </div>
 
           <div className="overflow-x-auto">
@@ -149,18 +152,18 @@ useEffect(() => {
                   <th className="text-left px-6 py-3 font-semibold">Submitting Department</th>
                   <th className="text-left px-6 py-3 font-semibold">Date Received</th>
                   <th className="text-left px-6 py-3 font-semibold">Status</th>
-                  <th className="text-left px-6 py-3 font-semibold">Action</th>
+                  <th className="text-left px-6 py-3 font-semibold text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {mockDocuments.map((doc) => (
+                {filtered.map((doc) => (
                   <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-3.5 text-gray-700 font-medium">{doc.name}</td>
-                    <td className="ppx-6 py-3.5 text-gray-500">{doc.type}</td>
+                    <td className="px-6 py-3.5 text-gray-500">{doc.type}</td>
                     <td className="px-6 py-3.5 text-gray-500">{doc.department}</td>
                     <td className="px-6 py-3.5 text-gray-500">{doc.date}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px]  bg-blue-50 text-blue-600 border border-blue-100">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
                         {doc.status}
                       </span>
                     </td>

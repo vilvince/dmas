@@ -29,11 +29,19 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <aside className="w-52 bg-[#1a2e4a] flex flex-col py-6 px-3 shrink-0">
 
         {/* Avatar */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center border-2 border-blue-400">
-            <User size={32} className="text-white" />
+        <div className="flex flex-col items-center mb-2 px-2">
+          <div className="w-full py-4 flex flex-col items-center">
+            <img 
+              src="/bucenglogo.png" 
+              alt="BUCENG Logo" 
+              className="w-20 h-20 object-contain mb-2" 
+            />
+            <span className="text-white font-bold text-xl tracking-tighter">BUCENG</span>
+            <p className="text-[10px] text-blue-300 uppercase tracking-widest font-medium">Bicol University</p>
           </div>
+          <div className="h-[1px] w-full bg-blue-900/50 " />
         </div>
+
 
         {/* Nav Items */}
         <nav className="flex flex-col gap-1 flex-1">
