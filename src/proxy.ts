@@ -23,14 +23,14 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  // Allow auth callback to always pass through
-  /*if (pathname.startsWith('/auth')) {
-    return supabaseResponse
-  }*/
 
-  if (request.nextUrl.pathname.startsWith('/super-admin/add-new')) {
+  // Uncomment tje other one to revert to Homepage else change to nested file page.tsx
+  if (pathname.startsWith('/auth')) {
+    return supabaseResponse
+  }
+  /*if (request.nextUrl.pathname.startsWith('/super-admin/add-new')) {
   return NextResponse.next()
-}
+}*/
 
   // If not logged in, redirect to login
   if (!user && !pathname.startsWith('/login') && !pathname.startsWith('/register')) {

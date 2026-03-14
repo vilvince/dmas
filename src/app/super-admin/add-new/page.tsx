@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AddNewPage() {
   const router = useRouter()
@@ -42,14 +43,14 @@ export default function AddNewPage() {
           {/* Archive Document Button */}
           <button
             onClick={() => router.push("/super-admin/archive")}
-            className="flex flex-col items-center justify-center w-36 h-36 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 transition cursor-pointer"
+            className="flex flex-col items-center justify-center w-40 h-36 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 transition cursor-pointer"
           >
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5">
               <polyline points="21 8 21 21 3 21 3 8"/>
               <rect x="1" y="3" width="22" height="5"/>
               <line x1="10" y1="12" x2="14" y2="12"/>
             </svg>
-            <span className="mt-2 text-sm font-medium">Archive Document</span>
+            <span className="px-4 mt-2 text-sm font-medium">Archive Document</span>
           </button>
         </div>
       </div>
@@ -61,16 +62,38 @@ export default function AddNewPage() {
 function NewDocumentForm({ onBack }: { onBack: () => void }) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+
+  const [departments, setDepartments] = useState<{id: string, name: string}[]>([])
+
+  useEffect(() => {
+  const fetchDepartments = async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from("departments")
+      .select("id, name")
+      .order("name")
+    
+    if (data) setDepartments(data)
+  }
+  fetchDepartments()
+  }, [])
+
+//For File Drops  
+  const [file, setFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   
   const [formData, setFormData] = useState({
     documentName: "",
     documentType: "",
     submittingDepartment: "",
     submittedBy: "",
+    documentDescription:"",
+    submittedById: "",
   })
 
   const handleClear = () => {
-    setFormData({ documentName: "", documentType: "", submittingDepartment: "", submittedBy: "" })
+    setFormData({ documentName: "", documentType: "", submittingDepartment: "", submittedBy: "" ,submittedById: "", documentDescription:""})
+    setFile(null)
   }
   const [error, setError] = useState("")
 
@@ -79,7 +102,8 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
     !formData.documentName ||
     !formData.documentType ||
     !formData.submittingDepartment ||
-    !formData.submittedBy
+    !formData.submittedBy||
+    !formData.documentDescription
   ) {
     alert("Please complete all required fields.")
     return  // stop here, don't show modal
@@ -87,10 +111,32 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
   setError("")
   setShowConfirm(true)
   }
-  const handleConfirmYes = () => {
+  const handleConfirmYes = async () => {
     setShowConfirm(false)
-    setShowSuccess(true)  // show success modal
-    // Supabase insert goes here later
+
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("documents")
+    .insert([
+      {
+        title: formData.documentName,
+        type: formData.documentType,
+        department_id: formData.submittingDepartment,  // stores the uuid
+        submitted_by: formData.submittedById,
+        description: formData.documentDescription,
+        status: "pending",                             // default status
+        is_archived: false,                            // default
+      }
+    ])
+
+  if (error) {
+    console.error("Error saving:", error.message)
+    setError("Failed to save document. Please try again.")
+    return
+  }
+
+  setShowSuccess(true)
   } 
   const handleSuccessOk = () => {
     setShowSuccess(false)
@@ -98,7 +144,7 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="overflow-y-auto flex-1 p-8">
 
       {showConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -106,12 +152,12 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
             
             <button
               onClick={() => setShowConfirm(false)}
-              className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl cursor-pointer"
+              className="absolute top-1 right-3 text-gray-400 hover:text-gray-600 text-3xl cursor-pointer"
             >
               ×
             </button>
 
-            <p className="text-gray-800 font-medium text-center mb-6">
+            <p className="mt-5 text-gray-800 font-medium text-center mb-5">
               Are you sure you want to save this document in archive?
             </p>
 
@@ -119,15 +165,15 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
               <p className="text-red-500 text-sm mb-3 text-right">{error}</p>
             )}
             
-            <div className="flex justify-center gap-3">
+            <div className="mt-8 flex justify-center gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="ml-auto px-6 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 cursor-pointer">
+                className="ml-auto px-5 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 cursor-pointer">
                 No
               </button>
               <button
                 onClick={handleConfirmYes}
-                className="px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">
+                className="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">
                 Yes
               </button>
             </div>
@@ -137,15 +183,15 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
     
       {showSuccess && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-8 w-96 text-center">
+          <div className="bg-white rounded-xl shadow-xl p-8 w-70 text-center">
             
-            <p className="text-gray-800 font-medium mb-6">
+            <p className="text-gray-800 font-medium mb-8">
               The document save successfully.
             </p>
 
             <button
               onClick={handleSuccessOk}
-              className="px-8 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer"
+              className="px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer"
             >
               Ok
             </button>
@@ -161,8 +207,8 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
         
       </div>
       
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-2xl">
+      
+      <div className="mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
 
         <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -186,7 +232,8 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
             onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Select the type of the document...</option>
+            {/*Change below the settings according to supabase 'documents_type_check'->'digital_archive', 'process_routing' */}
+            <option value="">Select the type of the document...</option> 
             <option value="Financial Document">Financial Document</option>
             <option value="Legal Document">Legal Document</option>
             <option value="HR Document">HR Document</option>
@@ -201,45 +248,145 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
           </label>
           <select
             value={formData.submittingDepartment}
-            onChange={(e) => setFormData({ ...formData, submittingDepartment: e.target.value })}
+            onChange={async (e) => {
+              const selectedDeptId = e.target.value
+
+  // Clear submitted by first while fetching
+              setFormData(prev => ({ 
+                ...prev, 
+                submittingDepartment: selectedDeptId,
+                submittedBy: "",        // ← clears immediately when dept changes
+                submittedById: "",      // ← clears uuid too
+              }))
+
+              if (!selectedDeptId) return
+
+  // Fetch profile linked to this department
+              const supabase = createClient()
+              const { data } = await supabase
+              .from("profiles")
+              .select("id, full_name")
+              .eq("department_id", selectedDeptId)
+              .single()
+
+              if (data) {
+                setFormData(prev => ({
+                ...prev,
+                submittedBy: data.full_name,
+                submittedById: data.id,
+                }))
+              }
+            }}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+            >
             <option value="">Select submitting department name...</option>
-            <option value="Accounting Office">Accounting Office</option>
-            <option value="Supply Office">Supply Office</option>
-            <option value="BAC">BAC</option>
-            <option value="Associate Dean">Associate Dean</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+              {dept.name}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Submitted By <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            placeholder="Enter full name..."
+            placeholder="Auto-filled based on department..."
             value={formData.submittedBy}
-            onChange={(e) => setFormData({ ...formData, submittedBy: e.target.value })}
+            readOnly
             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={handleClear}
-            className="cursor-pointer px-6 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50"
-          >
-            Clear
-          </button>
-          <button
-            onClick={handleSave}
-            className="cursor-pointer px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-          >
-            Save
-          </button>
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Enter a short description or details about the document..."
+            value={formData.documentDescription}
+            onChange={(e) => setFormData({ ...formData, documentDescription: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
+
+
+        <div className="mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Attach File (optional)
+        </label>
+
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setIsDragging(false)
+            const dropped = e.dataTransfer.files[0]
+            if (dropped) setFile(dropped)
+            }}
+            onClick={() => document.getElementById("fileInput")?.click()}
+            className={`border-2 border-dashed rounded-lg px-4 py-8 text-center cursor-pointer transition
+            ${isDragging
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400 bg-white"
+            }`}
+        >
+
+        {file ? (
+        // File already selected — show filename
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
+        <span>📄</span>
+        <span>{file.name}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); setFile(null) }}
+          className="ml-2 text-red-400 hover:text-red-600 text-xs cursor-pointer"
+        >
+          ✕ Remove
+        </button>
+      </div>
+      ) : (
+      // No file yet — show instructions
+      <div className="text-sm text-gray-400">
+        <p className="font-medium text-gray-500">Drag & Drop Document here</p>
+        <p className="text-xs mt-1">or click here to Browse</p>
+        <p className="text-xs mt-1 text-gray-300">PDF, DOCX, JPG</p>
+      </div>
+      )}
+      </div>
+  
+      <input
+        id="fileInput"
+        type="file"
+        accept=".pdf,.docx,.jpg,.jpeg,.png"
+        className="hidden"
+        onChange={(e) => {
+          const selected = e.target.files?.[0]
+          if (selected) setFile(selected)
+        }}
+        />
+      </div>
+
+
+      <div className="flex justify-end gap-3">
+        <button onClick={handleClear}
+            className="cursor-pointer px-6 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50"
+        >
+          Clear
+        </button>
+        <button
+        onClick={handleSave}
+            className="cursor-pointer px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+        >
+          Save
+        </button>
       </div>
     </div>
+    </div>
+
   )
 }
