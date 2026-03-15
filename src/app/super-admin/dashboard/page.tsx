@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Bell, FileText } from 'lucide-react'
+import { Search, FileText } from 'lucide-react'
+import NotificationBell from '@/components/NotificationBell'
 
 const mockDocuments = [
   { id: 1, name: 'Scholarship Grant Certificate', type: 'Financial Document', department: 'Accounting Office', date: '03/25/2025', status: 'Received' },
@@ -45,10 +46,7 @@ export default function SuperAdminDashboardPage() {
               className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 w-56"
             />
           </div>
-          <button className="relative p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
-            <Bell size={18} className="text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
-          </button>
+          <NotificationBell />
         </div>
       </header>
 
