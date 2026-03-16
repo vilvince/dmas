@@ -1,103 +1,33 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
-// ── Dummy Data for Departments & Users ─────────────────────────────────────
-const DUMMY_DEPARTMENTS = [
-  { id: "dept-1", name: "Accounting Office" },
-  { id: "dept-2", name: "Supply Office" },
-  { id: "dept-3", name: "BAC" },
-  { id: "dept-4", name: "Associate Dean" }
-]
-
-const DUMMY_USERS = [
-  { id: "user-1", name: "Jane Doe", deptId: "dept-1" },
-  { id: "user-2", name: "Mark Accountant", deptId: "dept-1" },
-  { id: "user-3", name: "Maria Santos", deptId: "dept-2" },
-  { id: "user-4", name: "Liera Borromeo", deptId: "dept-4" },
-  { id: "user-5", name: "Fernan Dematera", deptId: "dept-4" },
-]
-
-export default function AddNewPage() {
-  const router = useRouter()
-  const [selected, setSelected] = useState<null | "new" | "archive">(null)
-
-  if (selected === "new") {
-    return <NewDocumentForm onBack={() => setSelected(null)} />
-  }
-
-  return (
-    <div className="flex-1 p-8">
-      <Breadcrumb items={[{ label: "Add New" }]} />
-
-      <div className="mt-16 flex flex-col items-center gap-6">
-        <p className="text-sm text-gray-500">Please select action you want to do:</p>
-
-        <div className="flex gap-8">
-          {/* New Button */}
-          <button
-            onClick={() => setSelected("new")}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = "4px 4px 4px rgba(0,0,0,0.5)")}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-            className="flex flex-col items-center justify-center w-36 h-36 rounded-xl bg-[#367588] text-white cursor-pointer transition-all"
-          >
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="11" x2="12" y2="17"/>
-              <line x1="9" y1="14" x2="15" y2="14"/>
-            </svg>
-            <span className="mt-2 text-sm font-medium">New</span>
-          </button>
-
-          {/* Archive Document Button */}
-          <button
-            onClick={() => router.push("/super-admin/add-new-archive")}
-            className="flex flex-col items-center justify-center w-40 h-36 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:border-gray-400 transition cursor-pointer"
-          >
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5">
-              <polyline points="21 8 21 21 3 21 3 8"/>
-              <rect x="1" y="3" width="22" height="5"/>
-              <line x1="10" y1="12" x2="14" y2="12"/>
-            </svg>
-            <span className="px-4 mt-2 text-sm font-medium text-center">Archive Document</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+export default function AddNewArchivePage() {
+  return <ArchiveDocumentForm />
 }
 
-// ── Form Component ─────────────────────────────────────────────────────────
-function NewDocumentForm({ onBack }: { onBack: () => void }) {
+// ── Archive Document Form Component ────────────────────────────────────────
+function ArchiveDocumentForm() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState("")
   
-  // Validation States
+  // New state for form validation
   const [validationError, setValidationError] = useState("") 
-  const [invalidFields, setInvalidFields] = useState<string[]>([]) 
-
-  const [departments, setDepartments] = useState(DUMMY_DEPARTMENTS)
-  const [availableUsers, setAvailableUsers] = useState<{id: string, name: string}[]>([])
+  const [invalidFields, setInvalidFields] = useState<string[]>([])
 
   // For File Drops  
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   
+  // Form data without submitting department and submitted by
   const [formData, setFormData] = useState({
     documentName: "",
     documentType: "",
-    submittingDepartment: "",
-    customDepartment: "", 
-    submittedById: "",
-    customSubmittedBy: "", 
-    documentDescription:""
+    documentDescription: ""
   })
 
   // Helper to dynamically apply red border if a field is invalid
@@ -119,40 +49,30 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
 
   const handleClear = () => {
     setFormData({ 
-      documentName: "", documentType: "", 
-      submittingDepartment: "", customDepartment: "",
-      submittedById: "", customSubmittedBy: "", 
-      documentDescription:"" 
+      documentName: "", 
+      documentType: "", 
+      documentDescription: "" 
     })
     setFile(null)
-    setAvailableUsers([])
-    setValidationError("") 
-    setInvalidFields([]) // Clear red borders
+    setValidationError("")
+    setInvalidFields([])
   }
 
   const handleSave = () => {
     const newInvalidFields: string[] = []
 
-    // Advanced validation: check which fields are empty
+    // Check which fields are empty
     if (!formData.documentName) newInvalidFields.push("documentName")
     if (!formData.documentType) newInvalidFields.push("documentType")
     if (!formData.documentDescription) newInvalidFields.push("documentDescription")
-
-    if (formData.submittingDepartment === "others") {
-      if (!formData.customDepartment) newInvalidFields.push("customDepartment")
-      if (!formData.customSubmittedBy) newInvalidFields.push("customSubmittedBy")
-    } else {
-      if (!formData.submittingDepartment) newInvalidFields.push("submittingDepartment")
-      if (!formData.submittedById) newInvalidFields.push("submittedById")
-    }
 
     if (newInvalidFields.length > 0) {
       setInvalidFields(newInvalidFields)
       setValidationError("Please fill up all the required fields.")
       return
     }
-    
-    // Clear the error if everything is filled out correctly
+
+    // Clear errors if everything is valid
     setInvalidFields([])
     setValidationError("")
     setError("")
@@ -163,26 +83,21 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
     setShowConfirm(false)
     const supabase = createClient()
 
-    const finalDepartment = formData.submittingDepartment === "others" ? formData.customDepartment : formData.submittingDepartment
-    const finalSubmittedBy = formData.submittingDepartment === "others" ? formData.customSubmittedBy : formData.submittedById
-
     const { error } = await supabase
       .from("documents")
       .insert([
         {
           title: formData.documentName,
           type: formData.documentType,
-          department_id: finalDepartment, 
-          submitted_by: finalSubmittedBy,
           description: formData.documentDescription,
-          status: "pending",                            
-          is_archived: false,                            
+          status: "archived",                            
+          is_archived: true,                            
         }
       ])
 
     if (error) {
       console.error("Error saving:", error.message)
-      setError("Failed to save document. Please try again.")
+      setError("Failed to archive document. Please try again.")
       return
     }
 
@@ -208,7 +123,7 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
               ×
             </button>
             <p className="mt-5 text-gray-800 font-medium text-center mb-5">
-              Are you sure you want to save this document to process?
+              Are you sure you want to archive this document?
             </p>
             {error && <p className="text-red-500 text-sm mb-3 text-center">{error}</p>}
             <div className="mt-8 flex justify-center gap-3">
@@ -231,7 +146,7 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl p-8 w-80 text-center">
             <p className="text-gray-800 font-medium mb-8">
-              Document saved successfully.
+              Document archived successfully.
             </p>
             <button
               onClick={handleSuccessOk}
@@ -251,22 +166,23 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
         >
           <Home className="h-4 w-4" />
         </Link>
+
         <div className="flex items-center">
           <ChevronRight className="h-4 w-4 mx-1 text-gray-400" />
-          <button
-            onClick={onBack}
-            className="hover:text-gray-900 transition-colors cursor-pointer"
+          <Link
+            href="/super-admin/add-new"
+            className="hover:text-gray-900 transition-colors"
           >
             Add New
-          </button>
+          </Link>
         </div>
+
         <div className="flex items-center">
           <ChevronRight className="h-4 w-4 mx-1 text-gray-400" />
-          <span className="text-gray-900 font-medium">New Document</span>
+          <span className="text-gray-900 font-medium">Archive Document</span>
         </div>
       </nav>
 
-      {/* ── Form UI ── */}
       <div className="mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
 
         <div className="mb-5">
@@ -306,94 +222,6 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
           </select>
         </div>
 
-        {/* ── Submitting Department (With "Others" Logic) ── */}
-        <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Submitting Department <span className="text-red-500">*</span>
-          </label>
-          <div className="flex flex-col gap-2">
-            <select
-              value={formData.submittingDepartment}
-              onChange={(e) => {
-                const selectedDeptId = e.target.value
-                setFormData(prev => ({ 
-                  ...prev, 
-                  submittingDepartment: selectedDeptId,
-                  customDepartment: "", 
-                  submittedById: "",    
-                  customSubmittedBy: "" 
-                }))
-                clearFieldError("submittingDepartment")
-
-                if (selectedDeptId && selectedDeptId !== "others") {
-                  const filteredUsers = DUMMY_USERS.filter(u => u.deptId === selectedDeptId)
-                  setAvailableUsers(filteredUsers)
-                } else {
-                  setAvailableUsers([])
-                }
-              }}
-              className={getInputClass("submittingDepartment")}
-            >
-              <option value="">Select submitting department...</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-              <option value="others" className="font-semibold text-blue-600">Others (Specify)</option>
-            </select>
-
-            {formData.submittingDepartment === "others" && (
-              <input
-                type="text"
-                placeholder="Please type the department name..."
-                value={formData.customDepartment}
-                onChange={(e) => {
-                  setFormData({ ...formData, customDepartment: e.target.value })
-                  clearFieldError("customDepartment")
-                }}
-                className={`${getInputClass("customDepartment")} bg-blue-50/50 animate-in fade-in zoom-in-95`}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Submitted By <span className="text-red-500">*</span>
-          </label>
-          
-          {formData.submittingDepartment === "others" ? (
-            <input
-              type="text"
-              placeholder="Enter the submitter's full name..."
-              value={formData.customSubmittedBy}
-              onChange={(e) => {
-                setFormData({ ...formData, customSubmittedBy: e.target.value })
-                clearFieldError("customSubmittedBy")
-              }}
-              className={`${getInputClass("customSubmittedBy")} bg-blue-50/50 animate-in fade-in`}
-            />
-          ) : (
-            <select
-              value={formData.submittedById}
-              onChange={(e) => {
-                setFormData({ ...formData, submittedById: e.target.value })
-                clearFieldError("submittedById")
-              }}
-              disabled={!formData.submittingDepartment}
-              className={`${getInputClass("submittedById")} disabled:bg-gray-100 disabled:border-gray-200 disabled:cursor-not-allowed`}
-            >
-              <option value="">
-                {formData.submittingDepartment ? "Select a user..." : "Please select a department first"}
-              </option>
-              {availableUsers.map(user => (
-                <option key={user.id} value={user.id}>{user.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
-
         <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description <span className="text-red-500">*</span>
@@ -410,6 +238,7 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
           />
         </div>
 
+        {/* ── File Drag & Drop ── */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Attach File (optional)
@@ -461,7 +290,7 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
           />
         </div>
 
-        {/* ── Action Buttons with Inline Validation Error ── */}
+        {/* ── Action Buttons ── */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div>
             {/* The error message appears here on the left side */}
@@ -482,11 +311,10 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
               onClick={handleSave}
               className="cursor-pointer px-6 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 shadow-md transition"
             >
-              Save Document
+              Archive
             </button>
           </div>
         </div>
-
       </div>
     </div>
   )
