@@ -272,16 +272,6 @@ export default function MyDocumentsPage() {
           </div>
 
           <div className="relative" ref={notificationRef}>
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`p-2.5 rounded-xl border transition-all relative ${
-                showNotifications ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer shadow-sm'
-              }`}
-            >
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
-            </button>
-
             {showNotifications && (
               <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="px-5 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">

@@ -124,7 +124,6 @@ export default function InboxPage() {
               className="pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-64 transition-all"
             />
           </div>
-          <NotificationBell />
         </div>
       </header>
 
@@ -201,7 +200,7 @@ export default function InboxPage() {
                       }`}
                     >
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusBadgeColor(notif.status)}`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider border ${getStatusBadgeColor(notif.status)}`}>
                           {notif.status}
                         </span>
                       </td>
