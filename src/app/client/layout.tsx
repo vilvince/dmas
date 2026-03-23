@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Home, FileText, Inbox, User, LogOut,
+  Home, FileText, Inbox, User, LogOut, Info,   // added Info icon
 } from 'lucide-react'
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'My Documents', href: '/client/documents', icon: FileText },
   { label: 'Inbox',        href: '/client/inbox',        icon: Inbox    },
   { label: 'Profile',      href: '/client/profile',      icon: User     },
+  { label: 'About',        href: '/client/about',        icon: Info     },   // new About tab
 ]
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +42,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
           <div className="h-[1px] w-full bg-blue-900/50 " />
         </div>
-
 
         {/* Nav Items */}
         <nav className="flex flex-col gap-1 flex-1">

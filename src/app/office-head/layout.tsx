@@ -3,14 +3,15 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Home, ClipboardList, Activity, LogOut, Users, User   // ← added User
+    Home, ClipboardList, Activity, LogOut, Users, User, Info   // added Info
 } from 'lucide-react'
 
 const navItems = [
     { label: 'Dashboard', href: '/office-head/dashboard', icon: Home },
     { label: 'Action Queue', href: '/office-head/action-queue', icon: ClipboardList },
     { label: 'Activity Log', href: '/office-head/activity-log', icon: Activity },
-    { label: 'Profile', href: '/office-head/profile', icon: User },   // ← new item
+    { label: 'Profile', href: '/office-head/profile', icon: User },
+    { label: 'About', href: '/office-head/about', icon: Info },   // new
 ]
 
 export default function OfficeHeadLayout({ children }: { children: React.ReactNode }) {

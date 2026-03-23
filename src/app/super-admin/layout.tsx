@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Home, PlusCircle, FileText,
-  ClipboardList, Users, Archive, LogOut,
+  ClipboardList, Users, Archive, LogOut, Info,   // added Info
 } from 'lucide-react'
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Activity Log',      href: '/super-admin/activity-log',       icon: ClipboardList },
   { label: 'User Management',   href: '/super-admin/users',              icon: Users         },
   { label: 'Digital Archive',   href: '/super-admin/archive',            icon: Archive       },
+  { label: 'About',             href: '/super-admin/about',              icon: Info          }, // new
 ]
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
