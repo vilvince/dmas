@@ -24,9 +24,13 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow auth callback to always pass through
-  if (pathname.startsWith('/auth')) {
+  /*if (pathname.startsWith('/auth')) {
     return supabaseResponse
-  }
+  }*/
+
+  if (request.nextUrl.pathname.startsWith('/super-admin/add-new')) {
+  return NextResponse.next()
+}
 
   //Remove me once done
   if (request.nextUrl.pathname.startsWith('/api/test-email')) {
