@@ -4,7 +4,6 @@ import { sendDocumentNotification } from '@/lib/email/send-notification'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    
     const { to, senderName, senderEmail, recipientName, documentName, documentType, action } = body
 
     if (!to || !documentName || !action) {
@@ -12,22 +11,11 @@ export async function POST(request: Request) {
     }
 
     const result = await sendDocumentNotification({
-      to,
-      senderName: senderName || 'User',
-      senderEmail: senderEmail || 'noreply@buceng.edu.ph',
-      recipientName: recipientName || 'Office Head',
-      documentName,
-      documentType: documentType || 'Document',
-      action,
+      to, senderName, senderEmail, recipientName, documentName, documentType, action,
     })
 
-    if (!result.success) {
-      return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json(result)
   } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error }, { status: 500 })
   }
 }
