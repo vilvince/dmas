@@ -6,7 +6,7 @@ import { User } from 'lucide-react'
 export default function AboutPage() {
   const developers = [
     {
-      name: 'Laurence',
+      name: 'Laurence Lemuel G. Ayo',
       role: 'Full‑Stack Developer',
       description: 'A Bachelor of Science in Information Technology student in Bicol University College of Science, Laurence has a strong foundation in front end designs and systems-level and object-oriented programming. Proficient in C, C++, C#, and Java, he also has skills in web management. He worked on some projects including a Web app POS entitled "Sip&Serve", which he made it all by himself, including front end backend and quality assurance. Despite rigorous projects, he excels at doing projects without delay.',
       image: '/Laurence.png',
@@ -19,7 +19,7 @@ export default function AboutPage() {
       
     },
     {
-      name: 'Kristel Reyes',
+      name: 'Kristel Janne E. Reyes',
       role: 'UI/UX Designer & Front end Developer',
       description: 'A Bachelor of Science in Information Technology student from Bicol University College of Science. A UI/UX Designer and Front-End Developer, she has contributed to various projects including the Tarami (Albay Dialect Dictionary Mobile App), where she worked on designing intuitive user interfaces and enhancing user experience. She is passionate about creating visually appealing and user-friendly digital solutions. Outside of academics, she enjoys drawing and works as a freelance artist, accepting commission-based projects. She can be reached through her college-provided email kjer2022-5849-68094@bicol-u.edu.ph',
       image: '/Kristel.png',
