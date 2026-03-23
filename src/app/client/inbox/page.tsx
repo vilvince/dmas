@@ -1,5 +1,5 @@
 'use client'
-
+//inbox
 import { useState, useEffect, useCallback } from 'react'
 import { Search, ChevronLeft, ChevronRight, X, CheckCheck, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'

@@ -33,7 +33,16 @@ export async function proxy(request: NextRequest) {
 }
 
   //Remove me once done
-  if (request.nextUrl.pathname.startsWith('/api/test-email')) {
+if (request.nextUrl.pathname.startsWith('/client/dashboard')) {
+  return NextResponse.next()
+}
+if (request.nextUrl.pathname.startsWith('/client/documents')) {
+  return NextResponse.next()
+}
+if (request.nextUrl.pathname.startsWith('/client/inbox')) {
+  return NextResponse.next()
+}
+if (request.nextUrl.pathname.startsWith('/client/profile')) {
   return NextResponse.next()
 }
   

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Filter, Search, ChevronLeft, ChevronRight, ChevronDown, X, Eye } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getStatusBadgeColor, formatStatus } from '@/lib/utils/status'
+import { sendAllNotifications } from '@/lib/notifications/send-all-notifications'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface Document {
@@ -72,9 +73,8 @@ function CustomSelect({ options, value, onChange, placeholder, minWidth, error =
             <button
               key={option.value}
               onClick={() => { onChange(option.value); setIsOpen(false) }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-blue-50 cursor-pointer ${
-                value === option.value ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'
-              }`}
+              className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-blue-50 cursor-pointer ${value === option.value ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'
+                }`}
             >
               {option.label}
             </button>
@@ -93,20 +93,20 @@ const formatDate = (dateString: string) =>
 
 // ── Options ───────────────────────────────────────────────────────────────
 const actionOptions = [
-  { label: 'Received',         value: 'in_process'           },
-  { label: 'Approved',         value: 'approved'             },
+  { label: 'Received', value: 'in_process' },
+  { label: 'Approved', value: 'approved' },
   { label: 'Pending Approval', value: 'recommended_approval' },
-  { label: 'Released',         value: 'released'             },
-  { label: 'Denied',           value: 'denied'               },
+  { label: 'Released', value: 'released' },
+  { label: 'Denied', value: 'denied' },
 ]
 
 const statusFilterOptions = [
-  { label: 'Pending',          value: 'pending'              },
-  { label: 'Received',         value: 'in_process'           },
-  { label: 'Approved',         value: 'approved'             },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Received', value: 'in_process' },
+  { label: 'Approved', value: 'approved' },
   { label: 'Pending Approval', value: 'recommended_approval' },
-  { label: 'Released',         value: 'released'             },
-  { label: 'Denied',           value: 'denied'               },
+  { label: 'Released', value: 'released' },
+  { label: 'Denied', value: 'denied' },
 ]
 
 // ── Main Page ─────────────────────────────────────────────────────────────
@@ -114,32 +114,32 @@ export default function ActionQueuePage() {
   const supabase = createClient()
 
   // ── Data State ────────────────────────────────────────────────────────
-  const [documents, setDocuments]       = useState<Document[]>([])
-  const [departments, setDepartments]   = useState<{ id: string; name: string }[]>([])
-  const [currentUser, setCurrentUser]   = useState<{ id: string; department_id: string | null; full_name: string } | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([])
+  const [currentUser, setCurrentUser] = useState<{ id: string; department_id: string | null; full_name: string } | null>(null)
   const [fetchLoading, setFetchLoading] = useState(true)
-  const [fetchError, setFetchError]     = useState('')
+  const [fetchError, setFetchError] = useState('')
 
   // ── Filter State ──────────────────────────────────────────────────────
-  const [selectedDept, setSelectedDept]       = useState('')
-  const [selectedStatus, setSelectedStatus]   = useState('')
+  const [selectedDept, setSelectedDept] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
   const [selectedDocType, setSelectedDocType] = useState('')
-  const [searchQuery, setSearchQuery]         = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // ── Pagination ────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 8
 
   // ── Modal State ───────────────────────────────────────────────────────
-  const [selectedDoc, setSelectedDoc]           = useState<Document | null>(null)
-  const [actionTaken, setActionTaken]           = useState('')
-  const [corrOffice, setCorrOffice]             = useState('')
-  const [remarks, setRemarks]                   = useState('')
-  const [submitError, setSubmitError]           = useState('')
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
+  const [actionTaken, setActionTaken] = useState('')
+  const [corrOffice, setCorrOffice] = useState('')
+  const [remarks, setRemarks] = useState('')
+  const [submitError, setSubmitError] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [submitLoading, setSubmitLoading]       = useState(false)
-  const [urlLoading, setUrlLoading]             = useState(false)
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const [urlLoading, setUrlLoading] = useState(false)
 
   // ── Fetch Current User ────────────────────────────────────────────────
   const fetchCurrentUser = useCallback(async () => {
@@ -240,19 +240,19 @@ export default function ActionQueuePage() {
 
   // ── Filter Logic ──────────────────────────────────────────────────────
   const uniqueDocTypes = [...new Set(documents.map(d => d.document_type).filter(Boolean))] as string[]
-  const uniqueDepts    = [...new Set(documents.map(d => d.departments?.name).filter(Boolean))] as string[]
+  const uniqueDepts = [...new Set(documents.map(d => d.departments?.name).filter(Boolean))] as string[]
 
   const filteredDocs = documents.filter(doc => {
-    const matchesSearch  = doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType    = !selectedDocType || doc.document_type === selectedDocType
-    const matchesDept    = !selectedDept    || doc.departments?.name === selectedDept
-    const matchesStatus  = !selectedStatus  || doc.status === selectedStatus
+    const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType = !selectedDocType || doc.document_type === selectedDocType
+    const matchesDept = !selectedDept || doc.departments?.name === selectedDept
+    const matchesStatus = !selectedStatus || doc.status === selectedStatus
     return matchesSearch && matchesType && matchesDept && matchesStatus
   })
 
   // ── Pagination ────────────────────────────────────────────────────────
-  const totalPages    = Math.ceil(filteredDocs.length / itemsPerPage)
-  const startIndex    = (currentPage - 1) * itemsPerPage
+  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedDocs = filteredDocs.slice(startIndex, startIndex + itemsPerPage)
 
   const goToPage = (page: number) =>
@@ -279,8 +279,8 @@ export default function ActionQueuePage() {
   }
 
   const handleSubmitClick = () => {
-    if (!actionTaken)    { setSubmitError('Please select an action.'); return }
-    if (!corrOffice)     { setSubmitError('Please select a corresponding office.'); return }
+    if (!actionTaken) { setSubmitError('Please select an action.'); return }
+    if (!corrOffice) { setSubmitError('Please select a corresponding office.'); return }
     if (!remarks.trim()) { setSubmitError('Please write some remarks.'); return }
     setSubmitError('')
     setShowConfirmModal(true)
@@ -296,10 +296,10 @@ export default function ActionQueuePage() {
       const { error: updateError } = await supabase
         .from('documents')
         .update({
-          status:            actionTaken,
+          status: actionTaken,
           current_office_id: corrOffice,
-          remarks:           remarks.trim(),
-          updated_at:        new Date().toISOString(),
+          remarks: remarks.trim(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', selectedDoc.id)
 
@@ -313,35 +313,36 @@ export default function ActionQueuePage() {
 
       // 2. Insert document log
       await supabase.from('document_logs').insert([{
-        document_id:     selectedDoc.id,
-        performed_by:    currentUser.id,
-        action:          'Status updated',
+        document_id: selectedDoc.id,
+        performed_by: currentUser.id,
+        action: 'Status updated',
         previous_status: selectedDoc.status,
-        new_status:      actionTaken,
-        office_id:       corrOffice,
-        remarks:         remarks.trim(),
+        new_status: actionTaken,
+        office_id: corrOffice,
+        remarks: remarks.trim(),
       }])
 
       // 3. If forwarding to a different office — add routing record
       if (corrOffice && corrOffice !== currentUser.department_id) {
         await supabase.from('document_routing').insert([{
           document_id: selectedDoc.id,
-          office_id:   corrOffice,
-          status:      'pending',
+          office_id: corrOffice,
+          status: 'pending',
           received_at: new Date().toISOString(),
         }])
       }
 
-      // 4. Notify the submitter
-      if (selectedDoc.submitted_by) {
-        await supabase.from('notifications').insert([{
-          user_id:     selectedDoc.submitted_by,
-          document_id: selectedDoc.id,
-          title:       'Document Status Updated',
-          message:     `Your document "${selectedDoc.title}" has been updated to ${formatStatus(actionTaken)}.`,
-          is_read:     false,
-        }])
-      }
+      // 4. ✅ Send notifications to all parties (client + sender + receiver)
+      await sendAllNotifications({
+        documentId: selectedDoc.id,
+        documentTitle: selectedDoc.title,
+        documentType: selectedDoc.document_type || 'Document',
+        action: actionTaken as any, // 'in_process', 'approved', 'denied', etc.
+        clientId: selectedDoc.submitted_by!,
+        sendingOfficeId: currentUser.id,
+        receivingOfficeId: corrOffice !== currentUser.department_id ? corrOffice : undefined,
+        remarks: remarks.trim(),
+      })
 
       // 5. Refresh documents
       await fetchDocuments()
@@ -363,9 +364,9 @@ export default function ActionQueuePage() {
   }
 
   // ── Options ───────────────────────────────────────────────────────────
-  const docTypeOptions   = uniqueDocTypes.map(t => ({ label: t, value: t }))
-  const deptOptions      = uniqueDepts.map(d => ({ label: d, value: d }))
-  const officeOptions    = departments.map(d => ({ label: d.name, value: d.id }))
+  const docTypeOptions = uniqueDocTypes.map(t => ({ label: t, value: t }))
+  const deptOptions = uniqueDepts.map(d => ({ label: d, value: d }))
+  const officeOptions = departments.map(d => ({ label: d.name, value: d.id }))
 
   // ── JSX ───────────────────────────────────────────────────────────────
   return (
