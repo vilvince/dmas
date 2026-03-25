@@ -1,12 +1,22 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    const reasonParam = searchParams.get('reason')
+    if (errorParam === 'inactive') {
+      setError(reasonParam || 'Your account has been deactivated. Please contact support.')
+    }
+  }, [searchParams])
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -15,7 +25,6 @@ export default function LoginPage() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-
       },
     })
     if (error) {
@@ -27,7 +36,6 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl">
-        
         {/* Left Panel */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-700 items-center justify-center p-12">
           <div className="text-white text-center">
@@ -95,7 +103,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="flex items-center justify-center w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-50 transition mb-6"
+            className="flex items-center justify-center w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-50 transition mb-6  cursor-pointer"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

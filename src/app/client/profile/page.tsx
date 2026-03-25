@@ -320,12 +320,7 @@ export default function ProfilePage() {
                             />
                           </div>
                           {/* Department shown as read‑only text */}
-                          <div>
-                            <label className="text-xs text-gray-500 block mb-1">Department</label>
-                            <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-700">
-                              {departmentName}
-                            </div>
-                          </div>
+                          
                         </>
                       ) : (
                         <>
@@ -337,11 +332,7 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <Briefcase size={16} className="text-gray-400" />
-                            <div>
-                              <p className="text-xs text-gray-500">Department</p>
-                              <p className="text-sm font-medium text-gray-800">{departmentName}</p>
-                            </div>
+                            
                           </div>
                         </>
                       )}

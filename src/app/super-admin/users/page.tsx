@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, Trash2, Edit, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-// ── Custom Dropdown Component (unchanged) ──
+// ── Custom Dropdown Component ──
 function CustomSelect({ options, value, onChange, placeholder, minWidth, error = false }: {
   options: string[] | { label: string; value: string }[]
   value: string
@@ -82,7 +82,7 @@ interface Department {
   name: string
 }
 
-// ── Delete reasons (same as before) ──
+// ── Delete reasons ──
 const deleteReasons = [
   'Account no longer needed',
   'Duplicate account',
@@ -92,53 +92,50 @@ const deleteReasons = [
   'Others',
 ]
 
-// Role options for edit modal
 const roleOptions = ['super_admin', 'office_head', 'client']
 
 export default function UserManagementPage() {
   const supabase = createClient()
 
-  // ── Data states ─────────────────────────────────────────────────────────
+  // ── Data states ──
   const [users, setUsers] = useState<User[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // ── Filter states ──────────────────────────────────────────────────────
+  // ── Filter states ──
   const [search, setSearch] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments')
   const [showDropdown, setShowDropdown] = useState(false)
 
-  // ── Pagination ─────────────────────────────────────────────────────────
+  // ── Pagination ──
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
-  // ── Delete modal states ────────────────────────────────────────────────
+  // ── Delete modal states ──
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [selectedReason, setSelectedReason] = useState('')
   const [otherReason, setOtherReason] = useState('')
   const [deleteError, setDeleteError] = useState('')
 
-  // ── Edit modal states ──────────────────────────────────────────────────
+  // ── Edit modal states ──
   const [editTarget, setEditTarget] = useState<User | null>(null)
   const [editRole, setEditRole] = useState('')
   const [editDepartmentId, setEditDepartmentId] = useState('')
 
-  // ── Fetch departments (for dropdowns) ─────────────────────────────────
+  // ── Fetch departments ──
   useEffect(() => {
     const fetchDepartments = async () => {
       const { data, error } = await supabase
         .from('departments')
         .select('id, name')
         .order('name')
-      if (!error && data) {
-        setDepartments(data)
-      }
+      if (!error && data) setDepartments(data)
     }
     fetchDepartments()
   }, [supabase])
 
-  // ── Fetch users (with department name) ─────────────────────────────────
+  // ── Fetch users (only active ones) ──
   const fetchUsers = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -153,6 +150,7 @@ export default function UserManagementPage() {
         is_active,
         department:department_id (name)
       `)
+      .eq('is_active', true)   // only active users
       .order('full_name')
 
     if (error) {
@@ -180,7 +178,7 @@ export default function UserManagementPage() {
     fetchUsers()
   }, [])
 
-  // ── Filtered list (client‑side) ────────────────────────────────────────
+  // ── Filtering ──
   const filtered = users.filter((u) => {
     const matchSearch =
       search === '' ||
@@ -195,17 +193,13 @@ export default function UserManagementPage() {
     return matchSearch && matchDept
   })
 
-  // Reset pagination on filter change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, selectedDepartment])
+  useEffect(() => { setCurrentPage(1) }, [search, selectedDepartment])
 
-  // Pagination math
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedUsers = filtered.slice(startIndex, startIndex + itemsPerPage)
 
-  // ── Delete user (permanent) ───────────────────────────────────────────
+  // ── Soft delete handler (set is_active = false) ──
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return
     if (!selectedReason) {
@@ -220,24 +214,26 @@ export default function UserManagementPage() {
     const finalReason = selectedReason === 'Others' ? otherReason : selectedReason
 
     const { data: { user: currentUser } } = await supabase.auth.getUser()
+    // Log the deletion reason
     await supabase.from('user_deletion_logs').insert({
       user_id: deleteTarget.id,
       deleted_by: currentUser?.id,
       reason: finalReason,
     })
 
+    // Soft delete: set is_active = false
     const { error } = await supabase
       .from('profiles')
-      .delete()
+      .update({ is_active: false })
       .eq('id', deleteTarget.id)
 
     if (error) {
       console.error('Delete error:', error)
-      setDeleteError('Failed to delete user.')
+      setDeleteError(`Delete failed: ${error.message}`)
       return
     }
 
-    await fetchUsers()
+    await fetchUsers()   // refresh list (active users only)
     setDeleteTarget(null)
     setSelectedReason('')
     setOtherReason('')
@@ -251,7 +247,7 @@ export default function UserManagementPage() {
     setDeleteError('')
   }
 
-  // ── Edit user ─────────────────────────────────────────────────────────
+  // ── Edit handlers ──
   const handleEditClick = (user: User) => {
     setEditTarget(user)
     setEditRole(user.role)
@@ -272,7 +268,7 @@ export default function UserManagementPage() {
 
     if (error) {
       console.error('Update error:', error)
-      alert('Failed to update user.')
+      alert(`Failed to update user: ${error.message}`)
       return
     }
 
@@ -284,7 +280,6 @@ export default function UserManagementPage() {
     setEditTarget(null)
   }
 
-  // Helper to get department options for dropdown
   const departmentOptions = [
     { label: 'No Department Assigned', value: '' },
     ...departments.map(d => ({ label: d.name, value: d.id }))
@@ -292,7 +287,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Header (unchanged) */}
+      {/* Header */}
       <header className="bg-white border-b border-gray-100 px-8 py-4 shrink-0 flex items-center justify-between z-30">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Users</h1>
@@ -361,7 +356,7 @@ export default function UserManagementPage() {
               <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-200">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm text-gray-500 text-xs uppercase tracking-wide">
-                    <tr>
+                    <tr className="text-gray-600 text-xs uppercase tracking-wide">
                       <th className="text-left px-6 py-4 font-semibold w-1/5">Full Name</th>
                       <th className="text-left px-6 py-4 font-semibold w-1/5">Email Address</th>
                       <th className="text-left px-6 py-4 font-semibold w-1/6">Role</th>
@@ -373,7 +368,7 @@ export default function UserManagementPage() {
                   <tbody className="divide-y divide-gray-50">
                     {paginatedUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="px-6 py-4 text-gray-800 font-medium">{user.full_name}</td>
+                        <td className="px-6 py-4 text-gray-800 font-medium">{user.full_name}    </td>
                         <td className="px-6 py-4 text-gray-500">{user.email}</td>
                         <td className="px-6 py-4">
                           <span className="text-gray-600 capitalize">{user.role}</span>
@@ -469,74 +464,83 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      {/* Delete Modal (unchanged) */}
+      {/* Delete Modal – new style (mirroring archive delete modal) */}
       {deleteTarget && (
-        <div onClick={handleCloseDeleteModal} className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <div>
-                <h3 className="text-base font-bold text-gray-800">Delete User</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  You are about to delete{' '}
-                  <span className="font-semibold text-gray-600">{deleteTarget.full_name}</span>
-                </p>
-              </div>
-              <button onClick={handleCloseDeleteModal} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-400 cursor-pointer">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
-              <p className="text-sm font-semibold text-gray-700 mb-4">Please select a reason for deletion:</p>
-              {deleteError && <p className="text-red-500 text-xs mb-3 -mt-2">{deleteError}</p>}
-              <div className="flex flex-col gap-3">
-                {deleteReasons.map((reason) => (
-                  <label
-                    key={reason}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
-                      selectedReason === reason ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:bg-gray-50'
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+          onClick={handleCloseDeleteModal}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-gray-800 mb-2">Delete User</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please select a reason for deleting <span className="font-medium">{deleteTarget.full_name}</span>:
+            </p>
+
+            <div className="space-y-3 mb-4">
+              {deleteReasons.map((reason) => (
+                <label
+                  key={reason}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition
+                    ${selectedReason === reason
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 hover:bg-gray-50'
                     }`}
-                  >
-                    <input
-                      type="radio"
-                      name="deleteReason"
-                      value={reason}
-                      checked={selectedReason === reason}
-                      onChange={() => {
-                        setSelectedReason(reason)
-                        setDeleteError('')
-                        if (reason !== 'Others') setOtherReason('')
-                      }}
-                      className="accent-red-500 cursor-pointer"
-                    />
-                    <span className={`text-sm ${selectedReason === reason ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                      {reason}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              {selectedReason === 'Others' && (
-                <textarea
-                  placeholder="Please specify your reason..."
-                  value={otherReason}
-                  onChange={(e) => setOtherReason(e.target.value)}
-                  rows={3}
-                  className="mt-3 w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 resize-none"
-                />
-              )}
+                >
+                  <input
+                    type="radio"
+                    name="deleteReason"
+                    value={reason}
+                    checked={selectedReason === reason}
+                    onChange={() => {
+                      setSelectedReason(reason)
+                      setDeleteError('')
+                      if (reason !== 'Others') setOtherReason('')
+                    }}
+                    className="accent-red-500 cursor-pointer"
+                  />
+                  <span className={`text-sm ${selectedReason === reason ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                    {reason}
+                  </span>
+                </label>
+              ))}
             </div>
-            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-              <button onClick={handleCloseDeleteModal} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-white transition cursor-pointer">
+
+            {selectedReason === 'Others' && (
+              <textarea
+                placeholder="Please specify your reason..."
+                value={otherReason}
+                onChange={(e) => setOtherReason(e.target.value)}
+                rows={2}
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 resize-none mb-4"
+              />
+            )}
+
+            {deleteError && (
+              <p className="text-xs text-red-500 mb-4">{deleteError}</p>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCloseDeleteModal}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+              >
                 Cancel
               </button>
-              <button onClick={handleDeleteConfirm} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition cursor-pointer shadow-sm">
-                Confirm Delete
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition cursor-pointer"
+              >
+                Delete
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Modal (with fixed role labels) */}
+      {/* Edit Modal */}
       {editTarget && (
         <div onClick={handleEditCancel} className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-visible">
