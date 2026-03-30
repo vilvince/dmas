@@ -9,9 +9,28 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
+  const [logoUrl, setLogoUrl] = useState('/bucenglogo.png') // static for SSR
 
   const searchParams = useSearchParams()
   const supabase = createClient()
+
+  // Load terms acceptance from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('termsAccepted')
+    if (stored === 'true') {
+      setTermsAccepted(true)
+    }
+  }, [])
+
+  // Save terms acceptance to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('termsAccepted', String(termsAccepted))
+  }, [termsAccepted])
+
+  // Cache‑bust logo URL after hydration (client only)
+  useEffect(() => {
+    setLogoUrl(`/bucenglogo.png?t=${Date.now()}`)
+  }, [])
 
   useEffect(() => {
     const errorParam = searchParams.get('error')
@@ -50,7 +69,6 @@ export default function LoginPage() {
         {/* Left Panel */}
         <div className="flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-700 items-center justify-center p-12">
           <div className="text-white text-center">
-            {/* Logo - make sure the file exists at public/bucenglogo.png */}
             <div className="mb-6 flex justify-center">
               <img
                 src="/bucenglogo.png"
@@ -210,7 +228,10 @@ export default function LoginPage() {
                 Cancel
               </button>
               <button
-                onClick={() => setShowTermsModal(false)}
+                onClick={() => {
+                  setTermsAccepted(true)
+                  setShowTermsModal(false)
+                }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg"
               >
                 I Understand
