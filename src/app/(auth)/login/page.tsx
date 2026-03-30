@@ -9,7 +9,6 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
-  const [logoUrl, setLogoUrl] = useState('/bucenglogo.png') // static for SSR
 
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -26,11 +25,6 @@ export default function LoginPage() {
   useEffect(() => {
     localStorage.setItem('termsAccepted', String(termsAccepted))
   }, [termsAccepted])
-
-  // Cache‑bust logo URL after hydration (client only)
-  useEffect(() => {
-    setLogoUrl(`/bucenglogo.png?t=${Date.now()}`)
-  }, [])
 
   useEffect(() => {
     const errorParam = searchParams.get('error')
@@ -74,6 +68,8 @@ export default function LoginPage() {
                 src="/bucenglogo.png"
                 alt="University Logo"
                 className="w-35 h-35 object-contain"
+                 onLoad={() => console.log('Logo loaded successfully')}
+                 onError={(e) => console.error('Logo failed to load:', e)}
               />
             </div>
             <h1 className="text-5xl font-extrabold leading-tight mt-6 mb-4">
