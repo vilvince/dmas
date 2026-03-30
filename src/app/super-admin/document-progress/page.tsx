@@ -368,11 +368,11 @@ export default function DocumentProgressPage() {
           <table className="w-full text-sm table-fixed">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr className="text-gray-500 text-xs uppercase tracking-wide">
-                <th className="text-left px-4 py-3 font-semibold w-[30%]">Document Name</th>
-                <th className="text-left px-4 py-3 font-semibold w-[25%]">Document Type</th>
-                <th className="text-left px-4 py-3 font-semibold w-[22%]">Department</th>
-                <th className="text-left px-4 py-3 font-semibold w-[12%]">Date</th>
-                <th className="text-center px-4 py-3 font-semibold w-[11%]">Status</th>
+                <th className="text-left px-4 py-3 font-semibold w-[25%]">Document Name</th>
+                <th className="text-left px-4 py-3 font-semibold w-[30%]">Document Type</th>
+                <th className="text-left px-4 py-3 font-semibold w-[25%]">Department</th>
+                <th className="text-left px-4 py-3 font-semibold w-[13%]">Date</th>
+                <th className="text-center px-4 py-3 font-semibold w-[25%]">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
