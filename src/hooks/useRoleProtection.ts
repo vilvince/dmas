@@ -47,7 +47,7 @@ export function useRoleProtection(requiredRole: UserRole) {
           office_head: '/office-head/dashboard',
           client: '/client/dashboard',
         }
-        router.push(roleRedirectMap[profile.role])
+        router.push(roleRedirectMap[profile.role as UserRole])
       }
     }
 
