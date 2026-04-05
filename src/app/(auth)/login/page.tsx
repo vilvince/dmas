@@ -1,10 +1,11 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+// 1. We renamed your main page to "LoginContent"
+function LoginContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -237,5 +238,14 @@ export default function LoginPage() {
         </div>
       )}
     </main>
+  )
+}
+
+// 2. We created a NEW default component that safely wraps it in Suspense!
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-100 text-gray-600 font-semibold">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
