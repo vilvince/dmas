@@ -313,13 +313,18 @@ function NewDocumentForm({ onBack }: { onBack: () => void }) {
 
       // 💡 ARTA TIMER LOGIC ADDED HERE! ──────────────────────────────────
       // 1. Fetch SLA working days for this document type
-      const { data: slaData } = await supabase
+      const { data: slaData, error: slaError } = await supabase
         .from('document_type_sla')
         .select('working_days')
         .eq('document_type', finalDocumentType)
-        .single()
+        .maybeSingle() // use maybeSingle() so no error if row not found
+
+      if (slaError) {
+        console.error('[ARTA] SLA lookup failed:', slaError.message, '| document_type:', finalDocumentType)
+      }
 
       const workingDays = slaData?.working_days ?? 7 // fallback to 7 days if not found in db
+      console.log(`[ARTA] document_type="${finalDocumentType}", SLA working_days=${workingDays} (from DB: ${slaData?.working_days ?? 'not found, using fallback'})`)
 
       // 2. Calculate due date (skip weekends) using your custom utility
       const dueDate = addWorkingDays(new Date(), workingDays)

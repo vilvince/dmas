@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, FileText, Calendar, Building2, Tag, X, Eye, ChevronLeft, ChevronRight, ChevronDown, Filter } from 'lucide-react'
+import { Search, FileText, Calendar, Building2, Tag, X, Eye, ChevronLeft, ChevronRight, ChevronDown, Filter, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getStatusBadgeColor, formatStatus } from '@/lib/utils/status'
 
@@ -17,8 +17,10 @@ interface Document {
   file_url: string | null
   file_name: string | null
   created_at: string
-  initial_office: { name: string } | null   // ← never changes
-  current_office: { name: string } | null   // ← changes as doc moves
+  initial_office: { name: string } | null
+  current_office: { name: string } | null
+  client_acknowledged_at: string | null
+  client_acknowledgement_note: string | null
 }
 
 // ── Custom Select ─────────────────────────────────────────────────────────
@@ -80,13 +82,35 @@ const formatDate = (dateString: string) =>
 
 // ── Document Details Modal ────────────────────────────────────────────────
 function DocumentDetailsModal({
-  document, onClose, onViewFile, urlLoading
+  document, onClose, onViewFile, urlLoading, onAcknowledge
 }: {
   document: Document
   onClose: () => void
   onViewFile: () => void
   urlLoading: boolean
+  onAcknowledge: (note: string) => Promise<void>
 }) {
+  const isReleased  = document.status === 'released'
+  const isAcked     = !!document.client_acknowledged_at
+  const [note, setNote]           = useState('')
+  const [acking, setAcking]       = useState(false)
+  const [ackError, setAckError]   = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  const handleConfirmReceipt = async () => {
+    if (!note.trim()) { setAckError('Please write an acknowledgement note.'); return }
+    setAcking(true)
+    setAckError('')
+    try {
+      await onAcknowledge(note.trim())
+      setShowSuccess(true)
+    } catch {
+      setAckError('Failed to submit. Please try again.')
+    } finally {
+      setAcking(false)
+    }
+  }
+
   return (
     <div
       onClick={onClose}
@@ -94,7 +118,7 @@ function DocumentDetailsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[92vh] flex flex-col"
       >
         {/* Modal Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/50 shrink-0">
@@ -114,7 +138,7 @@ function DocumentDetailsModal({
         </div>
 
         {/* Modal Body */}
-        <div className="px-6 py-6 overflow-y-auto">
+        <div className="px-6 py-6 overflow-y-auto flex-1">
 
           {/* Status Badge */}
           <div className="flex items-center gap-3 mb-5">
@@ -140,23 +164,17 @@ function DocumentDetailsModal({
               {document.document_type_detail ? ` — ${document.document_type_detail}` : ''}
             </div>
 
-            {/* Submitted To — uses initial_office, NEVER changes */}
             <div className="text-sm font-medium text-slate-500 flex items-center gap-2 whitespace-nowrap">
               <Building2 size={14} className="text-slate-400 shrink-0" />
               Submitted To
             </div>
-            <div className="text-sm text-slate-700">
-              {document.initial_office?.name ?? '—'}
-            </div>
+            <div className="text-sm text-slate-700">{document.initial_office?.name ?? '—'}</div>
 
-            {/* Current Office — changes as document moves */}
             <div className="text-sm font-medium text-slate-500 flex items-center gap-2 whitespace-nowrap">
               <Building2 size={14} className="text-slate-400 shrink-0" />
               Current Office
             </div>
-            <div className="text-sm text-slate-700">
-              {document.current_office?.name ?? '—'}
-            </div>
+            <div className="text-sm text-slate-700">{document.current_office?.name ?? '—'}</div>
           </div>
 
           {/* Description */}
@@ -171,7 +189,7 @@ function DocumentDetailsModal({
           </div>
 
           {/* Office Remarks */}
-          <div>
+          <div className={isReleased ? 'mb-6' : ''}>
             <h3 className="text-sm font-bold text-slate-800 mb-3">Office Remarks</h3>
             <div className={`rounded-xl p-4 text-sm leading-relaxed max-h-40 overflow-y-auto border
               ${document.status === 'denied'
@@ -185,6 +203,69 @@ function DocumentDetailsModal({
               }
             </div>
           </div>
+
+          {/* ── Client Acknowledgement (Released only) ─────────────────── */}
+          {isReleased && (
+            <div className="rounded-xl border border-teal-200 bg-teal-50/60 overflow-hidden">
+              {/* Section Header */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-teal-600 text-white">
+                <CheckCircle2 size={15} />
+                <span className="text-sm font-semibold tracking-wide">Client Acknowledgement</span>
+              </div>
+
+              <div className="px-4 py-4">
+                {/* Already acknowledged */}
+                {isAcked ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-teal-700">
+                      <CheckCircle2 size={16} className="shrink-0" />
+                      <span className="text-sm font-semibold">Receipt Confirmed</span>
+                    </div>
+                    <p className="text-xs text-teal-700 bg-teal-100 rounded-lg px-3 py-2 leading-relaxed">
+                      {document.client_acknowledgement_note}
+                    </p>
+                    <p className="text-[10px] text-teal-500">
+                      Acknowledged on {formatDate(document.client_acknowledged_at!)}
+                    </p>
+                  </div>
+                ) : showSuccess ? (
+                  /* Success state after submitting */
+                  <div className="flex flex-col items-center gap-2 py-2">
+                    <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                      <CheckCircle2 size={22} className="text-teal-600" />
+                    </div>
+                    <p className="text-sm font-semibold text-teal-700">Receipt Confirmed!</p>
+                    <p className="text-xs text-teal-500 text-center">
+                      Your acknowledgement has been recorded successfully.
+                    </p>
+                  </div>
+                ) : (
+                  /* Acknowledgement form */
+                  <div className="space-y-3">
+                    <p className="text-xs text-teal-700 leading-relaxed">
+                      Your document has been <strong>released</strong>. Please confirm that you have received it by writing an acknowledgement below.
+                    </p>
+                    <textarea
+                      rows={3}
+                      value={note}
+                      onChange={(e) => { setNote(e.target.value); setAckError('') }}
+                      placeholder='e.g. "I have received the document successfully."'
+                      className={`w-full text-xs border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-teal-300 transition bg-white
+                        ${ackError ? 'border-red-400' : 'border-teal-200'}`}
+                    />
+                    {ackError && <p className="text-xs text-red-500">{ackError}</p>}
+                    <button
+                      onClick={handleConfirmReceipt}
+                      disabled={acking}
+                      className="w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition disabled:opacity-60 cursor-pointer"
+                    >
+                      {acking ? 'Submitting...' : '✓ Confirm Receipt'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}
@@ -250,6 +331,8 @@ export default function MyDocumentsPage() {
         file_url,
         file_name,
         created_at,
+        client_acknowledged_at,
+        client_acknowledgement_note,
         initial_office:departments!documents_initial_office_id_fkey ( name ),
         current_office:departments!documents_current_office_id_fkey ( name )
       `)
@@ -279,6 +362,32 @@ export default function MyDocumentsPage() {
       .createSignedUrl(selectedDocument.file_url, 3600)
     if (!error && data) window.open(data.signedUrl, '_blank')
     setUrlLoading(false)
+  }
+
+  // ── Acknowledge ───────────────────────────────────────────────────────
+  const handleAcknowledge = async (note: string) => {
+    if (!selectedDocument) return
+
+    const res = await fetch('/api/acknowledge-document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId: selectedDocument.id, note }),
+    })
+
+    const result = await res.json()
+    if (!res.ok) throw new Error(result.error ?? 'Failed to save acknowledgement.')
+
+    // Update local state so UI reflects the change immediately
+    const now = result.acknowledgedAt as string
+    setDocuments(prev => prev.map(d =>
+      d.id === selectedDocument.id
+        ? { ...d, client_acknowledged_at: now, client_acknowledgement_note: note }
+        : d
+    ))
+    setSelectedDocument(prev => prev
+      ? { ...prev, client_acknowledged_at: now, client_acknowledgement_note: note }
+      : null
+    )
   }
 
   // ── Filter & Sort ─────────────────────────────────────────────────────
@@ -415,10 +524,7 @@ export default function MyDocumentsPage() {
                       {doc.document_type ?? '—'}
                       {doc.document_type_detail ? ` — ${doc.document_type_detail}` : ''}
                     </td>
-                    {/* Submitted To — always shows initial office */}
-                    <td className="px-6 py-3.5 text-gray-500">
-                      {doc.initial_office?.name ?? '—'}
-                    </td>
+                    <td className="px-6 py-3.5 text-gray-500">{doc.initial_office?.name ?? '—'}</td>
                     <td className="px-6 py-3.5 text-gray-400">{formatDate(doc.created_at)}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider ${getStatusBadgeColor(doc.status)}`}>
@@ -479,6 +585,7 @@ export default function MyDocumentsPage() {
           onClose={() => setSelectedDocument(null)}
           onViewFile={handleViewFile}
           urlLoading={urlLoading}
+          onAcknowledge={handleAcknowledge}
         />
       )}
     </div>
